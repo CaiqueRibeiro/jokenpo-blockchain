@@ -93,13 +93,13 @@ contract JoKenPo {
     function play(Options newChoice) external payable {
         require(msg.sender != owner, "Owner cannot play");
         require(newChoice != Options.NONE, "Invalid choice");
-        require(player1 != msg.sender, "Wait the another plauyer");
+        require(player1 != msg.sender, "Wait the another player");
         require(msg.value >= bid, "Invalid bids");
 
         if (choice1 == Options.NONE) {
             player1 = msg.sender;
             choice1 = newChoice;
-            result = "Player 1 chosse his/her option. Waiting for player 2";
+            result = "Player 1 chose his/her option. Waiting for player 2";
         } else if (choice1 == Options.ROCK && newChoice == Options.SCISSORS) {
             finishGame("Rock breaks scissors. Player 1 wins", player1);
         } else if (choice1 == Options.PAPER && newChoice == Options.ROCK) {
