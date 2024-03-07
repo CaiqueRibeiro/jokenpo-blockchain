@@ -12,7 +12,9 @@ contract JoKenPo {
 
     Options public choice1 = Options.NONE;
     address private player1;
-    string public result = "";
+    string private result = "";
+    uint256 private bid = 0.01 ether;
+    uint8 private comission = 10; // percent
 
     address payable private immutable owner;
 
@@ -25,6 +27,37 @@ contract JoKenPo {
 
     constructor() {
         owner = payable(msg.sender);
+    }
+
+    function getResult() external view returns (string memory) {
+        return result;
+    }
+
+    // use external instead of public to save gas
+    function getBid() external view returns (uint256) {
+        return bid;
+    }
+
+    function getComission() external view returns (uint8) {
+        return comission;
+    }
+
+    function setBid(uint256 newBid) external {
+        require(owner == msg.sender, "You do not have permission to this");
+        require(
+            player1 == address(0),
+            "You cannot change the bid with a game in progress"
+        );
+        bid = newBid;
+    }
+
+    function setComission(uint8 newComission) external {
+        require(owner == msg.sender, "You do not have permission to this");
+        require(
+            player1 == address(0),
+            "You cannot change the comission with a game in progress"
+        );
+        comission = newComission;
     }
 
     function updateWinner(address winner) private {
@@ -40,7 +73,9 @@ contract JoKenPo {
 
     function finishGame(string memory newResult, address winner) private {
         address contractAddress = address(this);
-        payable(winner).transfer((contractAddress.balance / 100) * 90);
+        payable(winner).transfer(
+            (contractAddress.balance / 100) * (100 - comission)
+        );
         owner.transfer(contractAddress.balance);
 
         updateWinner(winner);
@@ -51,31 +86,32 @@ contract JoKenPo {
     }
 
     function getBalance() public view returns (uint) {
-        require(owner == msg.sender, "You don't have permission to this.");
+        require(owner == msg.sender, "You do not have permission to this");
         return address(this).balance;
     }
 
-    function play(Options newChoice) public payable {
+    function play(Options newChoice) external payable {
+        require(msg.sender != owner, "Owner cannot play");
         require(newChoice != Options.NONE, "Invalid choice");
         require(player1 != msg.sender, "Wait the another plauyer");
-        require(msg.value >= 0.1 ether, "Invalid bids");
+        require(msg.value >= bid, "Invalid bids");
 
         if (choice1 == Options.NONE) {
             player1 = msg.sender;
             choice1 = newChoice;
-            result = "Player 1 chosse his/her option. Waiting for player 2.";
+            result = "Player 1 chosse his/her option. Waiting for player 2";
         } else if (choice1 == Options.ROCK && newChoice == Options.SCISSORS) {
-            finishGame("Rock breaks scissors. Player 1 wins.", player1);
+            finishGame("Rock breaks scissors. Player 1 wins", player1);
         } else if (choice1 == Options.PAPER && newChoice == Options.ROCK) {
-            finishGame("Paper covers rock. Player 1 wins.", player1);
+            finishGame("Paper covers rock. Player 1 wins", player1);
         } else if (choice1 == Options.SCISSORS && newChoice == Options.PAPER) {
-            finishGame("Scissors cut paper. Player 1 wins.", player1);
+            finishGame("Scissors cut paper. Player 1 wins", player1);
         } else if (choice1 == Options.SCISSORS && newChoice == Options.ROCK) {
-            finishGame("Rock breaks scissors. Player 2 wins.", msg.sender);
+            finishGame("Rock breaks scissors. Player 2 wins", msg.sender);
         } else if (choice1 == Options.ROCK && newChoice == Options.PAPER) {
-            finishGame("Paper wraps rock. Player 2 wins.", msg.sender);
+            finishGame("Paper wraps rock. Player 2 wins", msg.sender);
         } else if (choice1 == Options.PAPER && newChoice == Options.SCISSORS) {
-            finishGame("Scissors cut paper. Player 2 wins.", msg.sender);
+            finishGame("Scissors cut paper. Player 2 wins", msg.sender);
         } else {
             result = "Draw game. The prize was doubled.";
             player1 = address(0);
@@ -83,7 +119,7 @@ contract JoKenPo {
         }
     }
 
-    function getLeaderboard() public view returns (Player[] memory) {
+    function getLeaderboard() external view returns (Player[] memory) {
         if (players.length < 2) return players;
 
         Player[] memory arr = new Player[](players.length);
