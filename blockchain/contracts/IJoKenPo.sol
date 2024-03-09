@@ -2,19 +2,9 @@
 
 pragma solidity ^0.8.24;
 
+import "./JKPLibrary.sol";
+
 interface IJoKenPo {
-    enum Options {
-        NONE,
-        ROCK,
-        PAPER,
-        SCISSORS
-    }
-
-    struct Player {
-        address wallet;
-        uint32 wins;
-    }
-
     function getResult() external view returns (string memory);
 
     function getBid() external view returns (uint256);
@@ -27,7 +17,10 @@ interface IJoKenPo {
 
     function getBalance() external view returns (uint);
 
-    function play(Options newChoice) external payable;
+    function play(JKPLibrary.Options newChoice) external payable;
 
-    function getLeaderboard() external view returns (Player[] memory);
+    function getLeaderboard()
+        external
+        view
+        returns (JKPLibrary.Player[] memory);
 }
