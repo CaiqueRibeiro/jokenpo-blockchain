@@ -1,12 +1,18 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const contract = await ethers.deployContract("JoKenPo");
+  const implementation = await ethers.deployContract("JoKenPo");
+  await implementation.waitForDeployment();
+  const implementationAddress = await implementation.getAddress();
+  console.log("Implementation contract deployed to:", implementationAddress);
+  
+  const adapter = await ethers.deployContract("JKPAdapter");
+  await adapter.waitForDeployment();
+  const adapterAddress = await adapter.getAddress();
+  console.log("Adapter contract deployed to:", adapterAddress);
 
-  await contract.waitForDeployment();
-  const address = await contract.getAddress();
-
-  console.log("Contract deployed to:", address);
+  await adapter.upgrade(implementationAddress);
+  console.log("Adapter was upgraded");
 }
 
 // We recommend this pattern to be able to use async/await everywhere
